@@ -41,7 +41,7 @@ class DMCWrapper(core.Env):
         task_name,
         task_kwargs=None,
         visualize_reward={},
-        from_pixels=False,
+        spec='state',
         height=84,
         width=84,
         camera_id=0,
@@ -50,7 +50,8 @@ class DMCWrapper(core.Env):
         channels_first=True
     ):
         assert 'random' in task_kwargs, 'please specify a seed, for deterministic behaviour'
-        self._from_pixels = from_pixels
+        assert spec in ['state','pixel','full'], 'spec should be either state, pixel, or full'
+        self._spec = spec
         self._height = height
         self._width = width
         self._camera_id = camera_id
@@ -76,7 +77,7 @@ class DMCWrapper(core.Env):
         )
 
         # create observation space
-        if from_pixels:
+        if self._spec == 'pixel' or self._spec == 'full':
             shape = [3, height, width] if channels_first else [height, width, 3]
             self._observation_space = spaces.Box(
                 low=0, high=255, shape=shape, dtype=np.uint8
@@ -99,7 +100,7 @@ class DMCWrapper(core.Env):
         return getattr(self._env, name)
 
     def _get_obs(self, time_step):
-        if self._from_pixels:
+        if self._spec == 'pixel' or self._spec == 'full':
             obs = self.render(
                 height=self._height,
                 width=self._width,
@@ -153,13 +154,19 @@ class DMCWrapper(core.Env):
         obs = self._get_obs(time_step)
         self.current_state = _flatten_obs(time_step.observation)
         extra['discount'] = time_step.discount
-        return obs, reward, done, extra
+        if self._spec == 'full':
+            return obs, self.current_state, reward, done, extra
+        else:
+            return obs, reward, done, extra
 
     def reset(self):
         time_step = self._env.reset()
         self.current_state = _flatten_obs(time_step.observation)
         obs = self._get_obs(time_step)
-        return obs
+        if self._spec == 'full':
+            return obs, self.current_state
+        else:
+            return obs
 
     def render(self, mode='rgb_array', height=None, width=None, camera_id=0):
         assert mode == 'rgb_array', 'only support rgb_array mode, given %s' % mode
