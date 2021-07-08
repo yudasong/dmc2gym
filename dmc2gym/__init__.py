@@ -7,7 +7,7 @@ def make(
         task_name,
         seed=1,
         visualize_reward=True,
-        from_pixels=False,
+        spec='full',
         height=84,
         width=84,
         camera_id=0,
@@ -19,8 +19,8 @@ def make(
 ):
     env_id = 'dmc_%s_%s_%s-v1' % (domain_name, task_name, seed)
 
-    if from_pixels:
-        assert not visualize_reward, 'cannot use visualize reward when learning from pixels'
+    #if from_pixels:
+    #    assert not visualize_reward, 'cannot use visualize reward when learning from pixels'
 
     # shorten episode length
     max_episode_steps = (episode_length + frame_skip - 1) // frame_skip
@@ -40,7 +40,7 @@ def make(
                 task_kwargs=task_kwargs,
                 environment_kwargs=environment_kwargs,
                 visualize_reward=visualize_reward,
-                from_pixels=from_pixels,
+                spec=spec,
                 height=height,
                 width=width,
                 camera_id=camera_id,
